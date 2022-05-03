@@ -18,9 +18,9 @@ n+=m
 
 #indices [1,n]
 #indices of base_vars
-base_vars = np.array(range((n-m)+1, n+1))
+base_vars = set(range((n-m)+1, n+1))
 #indices of non_base_vars
-non_base_vars = np.array(range(1, (n-m)+1))
+non_base_vars = set(range(1, (n-m)+1))
 
 def compute_delta_zj(AE, z, nbv):
     result = 10e6
@@ -32,6 +32,8 @@ def compute_delta_zj(AE, z, nbv):
             curr += AE[i][v-1]*z[i]
         if curr < result:
             pivot_col = v
+    if pivot_col>0:
+        return -1
     return pivot_col
 
 def compute_theta_min(AE, b, pivot_col):
@@ -44,8 +46,10 @@ def compute_theta_min(AE, b, pivot_col):
             pivot_row = i+1
     return pivot_row
 
-def kreisregel(AE, b, nbv, pivot_r, pivot_c):
-    pass
+def kreisregel(AE, b=None, row, col, pivot_row, pivot_col, pivot_el):
+    if not b:
+        return AE[row][col]-(AE[row][pivot_col]*AE[pivot_row][col])/pivot_el
+    return b[row]-(AE[row][pivot_col]*b[pivot_row])*pivot_el
 
 
 
@@ -55,9 +59,39 @@ def kreisregel(AE, b, nbv, pivot_r, pivot_c):
 #m-num. of rows/ineqs.
 #n-num. of vars incl. slack vars
 def simplex(AE, b, z, bv, nbv):
+    m,n=AE.shape[0],AE.shape[1]
     #start with base sol.
     pivot_col = compute_delta_zj(AE, z, nbv)
     pivot_row = compute_theta_min(AE, b, pivot_col)
+    pivot_el = AE[pivot_row][pivot_col]
+    
+    #exchange pivot_col+1 for pivot_row+1 from nbv to bv
+    nbv.remove(pivor_col+1)
+    nbv.add(pivot_row+1)
+    bv.remove(pivot_row+1)
+    bv.add(pivot_col+1)
+    
+    while pivot_col!=-1:
+        for i in range(m):
+            for j in range(n):
+                if j+1 not in bv and i!= pivot_col:
+                    if j<n:
+                        AE[i][j]=kreisregel(AE, i, j, pivot_row, pivot_col, pivot_el)
+                    else:
+                        AE[i][j]=kreisregel(AE, b, i, j, pivot_row, pivot_col, pivot_el)
+        pivot_col = compute_delta_zj(AE, z, nbv)
+        pivot_row = compute_theta_min(AE, b, pivot_col)
+        pivot_el = AE[pivot_row][pivot_col]
+        
+        nbv.remove(pivor_col+1)
+        nbv.add(pivot_row+1)
+        bv.remove(pivot_row+1)
+        bv.add(pivot_col+1)
+        
+        compute_z_val(z, bv)
+        get_edge(b, bv)
+        
+        
 
     #find pivot col (which var to include)
     #find pivot row (which var to exclude)
