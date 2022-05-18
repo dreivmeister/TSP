@@ -1,5 +1,5 @@
 import numpy as np
-
+#https://en.wikipedia.org/wiki/Particle_swarm_optimization
 class Boid:
     def __init__(self, pos, vel) -> None:
         self.pos = np.array(pos)
@@ -26,7 +26,13 @@ class Swarm:
 
             vel0 = np.random.uniform(-abs(high-low),abs(high-low),size=(1,2,1))
             self.population.append((Boid(pos0,vel0)))
-    
+   
+    def calc_pos(self, ind):
+        self.population[i].pos += self.population[i].vel
+            
+    def calc_vel(self, ind, rp, rg):
+        return self.iner*self.population[i].vel+self.cog_weight*rp*(self.population[i].ind_best-self.population[i].pos)+self.soc_weight*rg*(self.glo_best-self.population[i].pos)
+        
     def run_aco(self):
         num_iters = 0
         dim = 2
@@ -34,8 +40,18 @@ class Swarm:
             for i in range(len(self.population)):
                 for j in range(dim):
                     rp, rg = np.random.uniform(), np.random.uniform()
-                    self.population[i].vel = calc_vel(rp, rg)
-                    #usw https://en.wikipedia.org/wiki/Particle_swarm_optimization
+                    self.population[i].vel = calc_vel(i, rp, rg)
+                    calc_pos(i)
+                    if self.function(self.population[i].pos) < self.function(self.population[i].ind_best):
+                        self.population[i].ind_best = self.population[i].pos
+                        if self.function(self.population[i].ind_best) < self.function(self.glo_best):
+                            self.glo_best = self.population[i].ind_best
+            num_iters+=1
 
+            
+def func(inp):
+    return inp[0]**2 + inp[1]**2
 
-
+s = Swarm(func, 100, 2, 1.5, 0.4)
+s.run_aco()
+print(s.glo_best)
