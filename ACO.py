@@ -88,7 +88,14 @@ def update_pheros(num_nodes, top_sols, phero_matrix):
     pass
 
 
+#generate n solutions
+    #while still unvis nodes in neighborhood
+    #add new node to current sol based on equation probability equation
+#after all sols generated
+    #calc delta sum for all edges
+    #calc new val for all edges
 
+#[1,2,3]->[(1,2),(2,3)]
 
 
 
