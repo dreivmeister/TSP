@@ -77,14 +77,44 @@ class Swarm:
             num_iters += 1
 
 
-def function(pos):
-    return pos[0]**2 + pos[1]**2
+def function(x,y):
+    return x**2 + y**2
 
-S = Swarm(function, 100, 2.0, 2.0)
-S.run_aco()
-print(S.glo_best, S.glo_best_pos)
-
+# S = Swarm(function, 100, 2.0, 2.0)
+# S.run_aco()
+# print(S.glo_best, S.glo_best_pos)
 
 
 #https://stackoverflow.com/questions/51765184/how-to-3d-plot-function-of-2-variables-in-python
 #https://moonbooks.org/Articles/How-to-evaluate-and-plot-a-2D-function-in-python-/
+
+
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+def plot(function, mode='3D'):
+
+    b = np.arange(-10, 10, 0.2)
+    d = np.arange(-10, 10, 0.2)
+    B, D = np.meshgrid(b, d)
+    nu = function(B,D)
+    x = np.random.uniform(low=-10,high=10,size=(5,))
+    y = np.random.uniform(low=-10,high=10,size=(5,))
+
+    if mode == '3D':
+        fig = plt.figure()
+        ax = Axes3D(fig)
+        ax.plot_surface(B, D, nu)
+        ax.scatter(x, y, function(x,y)+3, c='red')
+    elif mode == '2D':
+        plt.contourf(B, D, nu)
+        plt.colorbar()
+        plt.scatter(x,y, c='red')
+
+    
+    plt.xlabel('b')
+    plt.ylabel('d')
+    plt.show()
+
+
+plot(function, '3D')
