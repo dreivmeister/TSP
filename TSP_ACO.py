@@ -1,57 +1,90 @@
 import numpy as np
-#https://en.wikipedia.org/wiki/Particle_swarm_optimization
+import random
+
 class Boid:
-    def __init__(self, pos, vel) -> None:
+    def __init__(self, pos, vel, ind_best) -> None:
         self.pos = np.array(pos)
         self.vel = np.array(vel)
-        self.ind_best = self.pos
+        self.ind_best = ind_best
+        self.ind_best_pos = self.pos
 
 class Swarm:
-    def __init__(self, f, num_particle, cog_weight, soc_weight, iner) -> None:
-        self.glo_best = 0
+    def __init__(self, f, num_particle, cog_weight, soc_weight) -> None:
+        self.glo_best = None
+        self.glo_best_pos = None
+
         self.cog_weight = cog_weight
         self.soc_weight = soc_weight
-        self.iner = iner
+        self.r1 = random.uniform(0,1)
+        self.r2 = random.uniform(0,1)
+        self.inermax = 1.0
+        self.inermin = 0.1
+        self.iner = self.inermax
+
         self.num_particle = num_particle
         self.population = []
         self.function = f
+        self.init_population()
     
     def init_population(self):
         low,high = 0.0,10.0
+        glpos = np.random.uniform(low=low,high=high,size=(2,))
+        self.glo_best_pos = glpos
+        self.glo_best = self.function(self.glo_best_pos)
         for i in range(self.num_particle):
-            pos0 = np.random.uniform(low=low,high=high,size=(1,2,1))
+            pos0 = np.random.uniform(low=low,high=high,size=(2,))
 
-            if self.function(pos0) < self.function(self.glo_best):
+            if self.function(pos0) < self.glo_best:
                 self.glo_best = self.function(pos0)
+                self.glo_best_pos = pos0
 
-            vel0 = np.random.uniform(-abs(high-low),abs(high-low),size=(1,2,1))
-            self.population.append((Boid(pos0,vel0)))
-   
-    def calc_pos(self, ind):
-        self.population[i].pos += self.population[i].vel
-            
-    def calc_vel(self, ind, rp, rg):
-        return self.iner*self.population[i].vel+self.cog_weight*rp*(self.population[i].ind_best-self.population[i].pos)+self.soc_weight*rg*(self.glo_best-self.population[i].pos)
-        
+            vel0 = np.random.uniform(-abs(high-low),abs(high-low),size=(2,))
+            self.population.append(Boid(pos0,vel0, self.function(pos0)))
+    
+    def update_velocity(self, curr_vel, ind_best_pos, curr_pos):
+        return self.iner*curr_vel + self.cog_weight*self.r1*(ind_best_pos-curr_pos) + self.soc_weight*self.r2*(self.glo_best_pos-curr_pos)
+    
+    def update_position(self, curr_pos, curr_vel):
+        return curr_pos + curr_vel
+    
+    def update_iner(self, t, T):
+        return self.inermax - (self.inermax - self.inermin)*(t/T)
+    
     def run_aco(self):
         num_iters = 0
-        dim = 2
-        while num_iters<1000:
-            for i in range(len(self.population)):
-                for j in range(dim):
-                    rp, rg = np.random.uniform(), np.random.uniform()
-                    self.population[i].vel = calc_vel(i, rp, rg)
-                    calc_pos(i)
-                    if self.function(self.population[i].pos) < self.function(self.population[i].ind_best):
-                        self.population[i].ind_best = self.population[i].pos
-                        if self.function(self.population[i].ind_best) < self.function(self.glo_best):
-                            self.glo_best = self.population[i].ind_best
-            num_iters+=1
+        max_iters = 1000
+        while num_iters < max_iters:
+            for particle in self.population:
+                #calc fitness
+                p_fitness = self.function(particle.pos)
 
+                #update ind_best
+                if p_fitness < particle.ind_best:
+                    particle.ind_best = p_fitness
+                    particle.ind_best_pos = particle.pos
+
+                    #update glo_best
+                    if particle.ind_best < self.glo_best:
+                        self.glo_best = particle.ind_best
+                        self.glo_best_pos = particle.pos
             
-def func(inp):
-    return inp[0]**2 + inp[1]**2
+            #update velocity
+            #update location
+            for particle in self.population:
+                particle.vel = self.update_velocity(particle.vel, particle.ind_best_pos, particle.pos)
+                particle.pos = self.update_position(particle.pos, particle.vel)
+            self.iner = self.update_iner(num_iters, max_iters)
+            num_iters += 1
 
-s = Swarm(func, 100, 2, 1.5, 0.4)
-s.run_aco()
-print(s.glo_best)
+
+def function(pos):
+    return pos[0]**2 + pos[1]**2
+
+S = Swarm(function, 100, 2.0, 2.0)
+S.run_aco()
+print(S.glo_best, S.glo_best_pos)
+
+
+
+#https://stackoverflow.com/questions/51765184/how-to-3d-plot-function-of-2-variables-in-python
+#https://moonbooks.org/Articles/How-to-evaluate-and-plot-a-2D-function-in-python-/
